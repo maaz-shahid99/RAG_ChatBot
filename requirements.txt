@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+python-dotenv
+google-generativeai
+chromadb
+sentence-transformers
+pypdf
+python-docx
+beautifulsoup4
+requests
+python-telegram-bot
+twilio
+google-auth
+google-auth-oauthlib
+google-api-python-client
+langchain
+langchain-community

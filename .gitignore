@@ -1,0 +1,6 @@
+venv
+.vscode
+chroma_db
+.env
+credentials.json
+token.json
