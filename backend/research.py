@@ -1,4 +1,4 @@
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from groq import Groq
 from fpdf import FPDF
 import requests
@@ -62,40 +62,51 @@ Write in a professional, detailed manner. Be thorough and insightful."""
 
 def create_pdf(topic: str, report_text: str) -> str:
     pdf = FPDF()
+    pdf.set_margins(15, 15, 15)
     pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
 
     # Title
-    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_font("Helvetica", "B", 18)
     pdf.set_text_color(50, 50, 150)
-    pdf.multi_cell(0, 12, f"Research Report: {topic}", align="C")
+    safe_topic = topic.encode("latin-1", "replace").decode("latin-1")
+    pdf.multi_cell(0, 10, f"Research Report: {safe_topic}", align="C")
     pdf.ln(4)
 
     # Divider
     pdf.set_draw_color(100, 100, 200)
     pdf.set_line_width(0.8)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(8)
+    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    pdf.ln(6)
 
     # Body
     pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(30, 30, 30)
 
     for line in report_text.split("\n"):
+        # Clean non-latin characters
         line = line.strip()
+        line = line.encode("latin-1", "replace").decode("latin-1")
         if not line:
-            pdf.ln(4)
+            pdf.ln(3)
             continue
-        # Detect headings (numbered or all caps)
-        if line[0].isdigit() and "." in line[:3]:
+        # Detect headings
+        if len(line) > 2 and line[0].isdigit() and "." in line[:3]:
             pdf.set_font("Helvetica", "B", 13)
             pdf.set_text_color(50, 50, 150)
             pdf.multi_cell(0, 8, line)
             pdf.set_font("Helvetica", "", 11)
             pdf.set_text_color(30, 30, 30)
+        elif line.startswith("**") or line.startswith("##"):
+            clean = line.replace("**", "").replace("##", "").strip()
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.set_text_color(50, 50, 150)
+            pdf.multi_cell(0, 7, clean)
+            pdf.set_font("Helvetica", "", 11)
+            pdf.set_text_color(30, 30, 30)
         else:
-            pdf.multi_cell(0, 7, line)
+            pdf.multi_cell(0, 6, line)
 
-    # Save to temp file
     tmp_path = os.path.join(tempfile.gettempdir(), f"research_{topic[:30].replace(' ', '_')}.pdf")
     pdf.output(tmp_path)
     return tmp_path

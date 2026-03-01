@@ -28,6 +28,32 @@ def build_reply(to: str, subject: str, body: str) -> dict:
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {"raw": raw}
 
+SKIP_SENDERS = [
+    "no-reply", "noreply", "do-not-reply", "donotreply",
+    "mailer-daemon", "postmaster", "newsletter", "notifications",
+    "notify", "alert", "updates", "marketing", "promo",
+    "support", "hello@", "info@", "service@", "mail@",
+    "bounces", "automated", "system", "daemon"
+]
+
+SKIP_DOMAINS = [
+    "linkedin.com", "amazon.com", "bookmyshow.com", "adobe.com",
+    "lenskart.com", "hm.com", "primevideo.com", "grammarly.com",
+    "irctc.co.in", "railyatri.in", "naukri.com", "facebookmail.com",
+    "accounts.google.com", "googlemail.com", "twitter.com",
+    "instagram.com", "youtube.com", "netflix.com", "spotify.com"
+]
+
+def should_skip(sender: str) -> bool:
+    sender_lower = sender.lower()
+    # Skip if sender contains any skip keywords
+    if any(skip in sender_lower for skip in SKIP_SENDERS):
+        return True
+    # Skip if sender is from a known promotional domain
+    if any(domain in sender_lower for domain in SKIP_DOMAINS):
+        return True
+    return False
+
 def check_and_reply(service):
     results = service.users().messages().list(
         userId="me", labelIds=["UNREAD"], maxResults=5
@@ -49,6 +75,15 @@ def check_and_reply(service):
             else:
                 to_address = sender.strip()
 
+            # ✅ Skip newsletters, bots, automated emails
+            if should_skip(sender):
+                print(f"⏭️ Skipped (automated): {sender}")
+                service.users().messages().modify(
+                    userId="me", id=msg["id"],
+                    body={"removeLabelIds": ["UNREAD"]}
+                ).execute()
+                continue
+
             # Get email body
             body_data = msg_data["payload"].get("body", {}).get("data", "")
             body = base64.urlsafe_b64decode(body_data + "==").decode("utf-8", errors="ignore") if body_data else subject
@@ -66,10 +101,10 @@ def check_and_reply(service):
                 userId="me", id=msg["id"],
                 body={"removeLabelIds": ["UNREAD"]}
             ).execute()
-            print(f"Replied to: {sender}")
+            print(f"✅ Replied to: {sender}")
 
         except Exception as e:
-            print(f"Skipped email due to error: {e}")
+            print(f"⚠️ Skipped email due to error: {e}")
             # Mark as read anyway to avoid retrying bad emails
             service.users().messages().modify(
                 userId="me", id=msg["id"],
@@ -78,7 +113,7 @@ def check_and_reply(service):
 
 if __name__ == "__main__":
     service = get_gmail_service()
-    print("[INFO] Gmail bot running — checking every 60 seconds...")
+    print("📧 Gmail bot running — checking every 60 seconds...")
     while True:
         check_and_reply(service)
         time.sleep(60)

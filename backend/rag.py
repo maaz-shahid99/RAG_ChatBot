@@ -17,6 +17,24 @@ def get_collection():
 # ✅ Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+def get_followup_questions(query: str, answer: str) -> list:
+    try:
+        prompt = f"""Based on this question and answer, suggest exactly 3 short follow-up questions.
+Return ONLY a JSON array of 3 strings, nothing else. Example: ["Q1?", "Q2?", "Q3?"]
+
+Question: {query}
+Answer: {answer}"""
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150
+        )
+        import json
+        text = response.choices[0].message.content.strip()
+        return json.loads(text)
+    except Exception:
+        return []
+
 def ask(query: str, history: list = []) -> dict:
     # 1. Embed the query
     query_embedding = embedder.encode(query).tolist()
@@ -51,5 +69,6 @@ Answer:"""
 
     return {
         "answer": answer,
-        "sources": list(set(sources))
+        "sources": list(set(sources)),
+        "followup": get_followup_questions(query, answer)
     }

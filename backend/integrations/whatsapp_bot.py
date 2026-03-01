@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Form
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
-from twilio.rest import Client as TwilioClient
-import sys, os, tempfile, requests
+import sys, os, tempfile, requests, threading
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from rag import ask
 from ingest import ingest_pdf, ingest_docx, ingest_url
 from memory import get_history, add_to_history
+from research import run_research
 from dotenv import load_dotenv
 load_dotenv()
 
+GMAIL_ADDRESS = os.getenv("GMAIL_ADDRESS")
 router = APIRouter()
 
 def download_twilio_file(media_url: str, filename: str) -> str:
@@ -58,6 +59,15 @@ async def whatsapp_webhook(
 
         return Response(content=str(resp), media_type="text/xml")
 
+    # ✅ Handle research command
+    if Body.lower().startswith("research:"):
+        topic = Body[9:].strip()
+        thread = threading.Thread(target=run_research, args=(topic, GMAIL_ADDRESS))
+        thread.daemon = True
+        thread.start()
+        resp.message(f"🔬 Research started on '{topic}'! Results will be mailed to you shortly.")
+        return Response(content=str(resp), media_type="text/xml")
+
     # ✅ Handle URL ingestion
     if Body.startswith("http://") or Body.startswith("https://"):
         try:
@@ -73,5 +83,8 @@ async def whatsapp_webhook(
     add_to_history(user_id, "user", Body)
     add_to_history(user_id, "assistant", result["answer"])
     sources = "\n📎 " + ", ".join(result["sources"]) if result["sources"] else ""
-    resp.message(result["answer"] + sources)
+    followup = ""
+    if result.get("followup"):
+        followup = "\n\n💡 Follow-up:\n" + "\n".join(f"• {q}" for q in result["followup"])
+    resp.message(result["answer"] + sources + followup)
     return Response(content=str(resp), media_type="text/xml")

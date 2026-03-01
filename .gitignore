@@ -4,3 +4,4 @@ chroma_db
 .env
 credentials.json
 token.json
+memory.db
