@@ -60,54 +60,57 @@ Write in a professional, detailed manner. Be thorough and insightful."""
     )
     return response.choices[0].message.content
 
+def clean_text(text: str) -> str:
+    """Remove non-latin characters that break fpdf."""
+    return text.encode("latin-1", "replace").decode("latin-1")
+
 def create_pdf(topic: str, report_text: str) -> str:
     pdf = FPDF()
-    pdf.set_margins(15, 15, 15)
+    pdf.set_margins(20, 20, 20)
+    pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
 
     # Title
-    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(50, 50, 150)
-    safe_topic = topic.encode("latin-1", "replace").decode("latin-1")
-    pdf.multi_cell(0, 10, f"Research Report: {safe_topic}", align="C")
-    pdf.ln(4)
+    pdf.cell(0, 10, clean_text(f"Research Report: {topic}"), ln=True, align="C")
+    pdf.ln(2)
 
-    # Divider
-    pdf.set_draw_color(100, 100, 200)
-    pdf.set_line_width(0.8)
-    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    # Divider line
+    pdf.set_draw_color(150, 150, 200)
+    pdf.line(20, pdf.get_y(), 190, pdf.get_y())
     pdf.ln(6)
 
-    # Body
-    pdf.set_font("Helvetica", "", 11)
-    pdf.set_text_color(30, 30, 30)
+    # Body text
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(40, 40, 40)
 
     for line in report_text.split("\n"):
-        # Clean non-latin characters
-        line = line.strip()
-        line = line.encode("latin-1", "replace").decode("latin-1")
+        line = clean_text(line.strip())
         if not line:
             pdf.ln(3)
             continue
-        # Detect headings
-        if len(line) > 2 and line[0].isdigit() and "." in line[:3]:
-            pdf.set_font("Helvetica", "B", 13)
-            pdf.set_text_color(50, 50, 150)
-            pdf.multi_cell(0, 8, line)
-            pdf.set_font("Helvetica", "", 11)
-            pdf.set_text_color(30, 30, 30)
-        elif line.startswith("**") or line.startswith("##"):
-            clean = line.replace("**", "").replace("##", "").strip()
-            pdf.set_font("Helvetica", "B", 12)
-            pdf.set_text_color(50, 50, 150)
-            pdf.multi_cell(0, 7, clean)
-            pdf.set_font("Helvetica", "", 11)
-            pdf.set_text_color(30, 30, 30)
-        else:
-            pdf.multi_cell(0, 6, line)
 
-    tmp_path = os.path.join(tempfile.gettempdir(), f"research_{topic[:30].replace(' ', '_')}.pdf")
+        # Bold heading detection
+        if line.startswith("**") and line.endswith("**"):
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_text_color(50, 50, 150)
+            pdf.multi_cell(170, 7, line.replace("**", "").strip())
+            pdf.set_font("Helvetica", "", 10)
+            pdf.set_text_color(40, 40, 40)
+        elif len(line) > 1 and line[0].isdigit() and line[1] in ".):":
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_text_color(50, 50, 150)
+            pdf.multi_cell(170, 7, line)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.set_text_color(40, 40, 40)
+        else:
+            pdf.multi_cell(170, 6, line)
+
+    tmp_path = os.path.join(
+        tempfile.gettempdir(),
+        f"research_{topic[:20].replace(' ', '_')}.pdf"
+    )
     pdf.output(tmp_path)
     return tmp_path
 

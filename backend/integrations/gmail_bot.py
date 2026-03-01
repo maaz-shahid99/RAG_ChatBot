@@ -33,7 +33,7 @@ SKIP_SENDERS = [
     "mailer-daemon", "postmaster", "newsletter", "notifications",
     "notify", "alert", "updates", "marketing", "promo",
     "support", "hello@", "info@", "service@", "mail@",
-    "bounces", "automated", "system", "daemon"
+    "bounces", "automated", "system", "daemon", "sales@"
 ]
 
 SKIP_DOMAINS = [
@@ -41,7 +41,7 @@ SKIP_DOMAINS = [
     "lenskart.com", "hm.com", "primevideo.com", "grammarly.com",
     "irctc.co.in", "railyatri.in", "naukri.com", "facebookmail.com",
     "accounts.google.com", "googlemail.com", "twitter.com",
-    "instagram.com", "youtube.com", "netflix.com", "spotify.com"
+    "instagram.com", "youtube.com", "netflix.com", "spotify.com", "altium.com"
 ]
 
 def should_skip(sender: str) -> bool:
