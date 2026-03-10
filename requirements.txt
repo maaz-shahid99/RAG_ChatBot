@@ -6,6 +6,7 @@ python-dotenv
 
 # LLM & AI
 groq
+google-genai                  # Gemini SDK  (was missing — required by research_agent)
 openai-whisper
 
 # Vector DB & Embeddings
@@ -24,8 +25,10 @@ ddgs
 # PDF Generation
 fpdf2
 
-# Database
-# sqlite3 is built into Python — no install needed
+# Visualisation
+matplotlib
+
+# Database  (sqlite3 is built-in — no install needed)
 
 # Platform Integrations
 python-telegram-bot

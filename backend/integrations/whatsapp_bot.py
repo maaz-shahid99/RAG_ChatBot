@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from rag import ask
 from ingest import ingest_pdf, ingest_docx, ingest_url
 from memory import get_history, add_to_history
-from research import run_research
+from research_agent import run_research
 from dotenv import load_dotenv
 load_dotenv()
 
